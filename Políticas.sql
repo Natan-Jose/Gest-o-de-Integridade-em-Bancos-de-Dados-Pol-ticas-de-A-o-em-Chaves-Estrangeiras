@@ -67,8 +67,14 @@ WHERE
 
 SELECT * FROM  information_schema.REFERENTIAL_CONSTRAINTS;
 
-/* ALTERANDO AS POLÍTICAS DE ATUALIZAÇÃO E REMOÇÃO */
+/* LISTAR AS CHAVES ESTRANGEIRAS IMPLÍCITAS NA TABELA 'Membro '*/
 
+# "Chave Estrangeira Implícita"  = É uma chave estrangeira criada automaticamente pelo SGBD.
+SELECT CONSTRAINT_NAME, constraint_type
+FROM information_schema.table_constraints
+WHERE TABLE_NAME = 'Membro'; 
+
+/* ALTERANDO AS POLÍTICAS DE ATUALIZAÇÃO E REMOÇÃO */
 -- Método 01: Remover e Recriar a CONSTRAINT
 SHOW CREATE TABLE Membro;
 
@@ -83,7 +89,6 @@ ON DELETE RESTRICT
 ON UPDATE CASCADE;
 
 -- Método 2: Utilizando Temporariamente uma Tabela de Backup
-
 # RECOMENDADO
 SHOW CREATE TABLE Membro;
 
@@ -103,4 +108,3 @@ ON UPDATE CASCADE;
 INSERT INTO Membro SELECT * FROM orders_backup;
 
 DROP TABLE orders_backup;
-    
