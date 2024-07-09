@@ -1,6 +1,6 @@
-CREATE DATABASE Controle;
+CREATE DATABASE Teste;
 
-USE Controle;
+USE Teste;
 
 CREATE TABLE Departamento(
  cod_depto INT PRIMARY KEY,
@@ -15,19 +15,16 @@ CREATE TABLE Membro(
  papel VARCHAR(50), 
  dt_nasc DATE, 
  salario NUMERIC NOT NULL,
- CONSTRAINT fk_departamento_membro
  FOREIGN KEY (cod_depto)
  REFERENCES Departamento(cod_depto)
  );
 
--- Inserção de Departamento
 INSERT INTO Departamento (cod_depto, nome_depto) VALUES (1, 'Intermidia');
 INSERT INTO Departamento (cod_depto, nome_depto) VALUES (2, 'Sistemas Web');
 INSERT INTO Departamento (cod_depto, nome_depto) VALUES (3, 'Mobile');
 INSERT INTO Departamento (cod_depto, nome_depto) VALUES (4, 'Inteligência Artificial');
 INSERT INTO Departamento (cod_depto, nome_depto) VALUES (5, 'Desktop');
 
--- Inserção de membros
 INSERT INTO Membro (id_membro, cod_depto, nome, sexo, papel, dt_nasc, salario)
  VALUES (1, 1, 'Ana Carla Barros', 'F', 'analista', null, 3000);
 INSERT INTO Membro (id_membro, cod_depto, nome, sexo, papel, dt_nasc, salario)
@@ -53,13 +50,30 @@ INSERT INTO Membro (id_membro, cod_depto, nome, sexo, papel, dt_nasc, salario)
 INSERT INTO Membro (id_membro, cod_depto, nome, sexo, papel, dt_nasc, salario)
  VALUES (12, 4, 'Judith Deodora', 'F', 'gerente', '1960-01-04', 12000);
 
-/* CONSULTA PARA VISUALIZAR AS POLÍTICAS DE AÇÃO DE UMA CHAVE ESTRANGEIRA */
+# PASSOS PARA TROCAR A POLÍTICA
+
+-- 1. Identificar a Constraint,
+-- 2. Remover a Constraint Existente,
+-- 3. Recriar a Constraint com a política desejada.
+
+/* Listar as constraints da FK de uma tabela */
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE
+FROM 
+	INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+WHERE 
+	CONSTRAINT_SCHEMA = 'Controle'
+	AND TABLE_NAME = 'Membro'
+    AND CONSTRAINT_TYPE = 'FOREIGN KEY';
+
+/* Visualizar as políticas da chave FK */
+
 SELECT
     CONSTRAINT_NAME,
     DELETE_RULE AS ON_DELETE,
     UPDATE_RULE AS ON_UPDATE
 FROM
-    information_schema.REFERENTIAL_CONSTRAINTS
+     INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
 WHERE
     CONSTRAINT_SCHEMA = 'Controle'
     AND TABLE_NAME = 'Membro'
@@ -67,15 +81,27 @@ WHERE
 
 SELECT * FROM  information_schema.REFERENTIAL_CONSTRAINTS;
 
-/* LISTAR AS CHAVES ESTRANGEIRAS IMPLÍCITAS NA TABELA 'Membro '*/
+/* Filtra as chaves estrangeiras da tabela 'Membro' e suas referências */
 
-# "Chave Estrangeira Implícita"  = É uma chave estrangeira criada automaticamente pelo SGBD.
-SELECT CONSTRAINT_NAME, constraint_type
-FROM information_schema.table_constraints
-WHERE TABLE_NAME = 'Membro'; 
+SELECT 
+    tc.CONSTRAINT_NAME, 
+    tc.CONSTRAINT_TYPE, 
+    kcu.COLUMN_NAME, 
+    kcu.REFERENCED_TABLE_NAME, 
+    kcu.REFERENCED_COLUMN_NAME
+FROM 
+    INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
+JOIN 
+    INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu 
+    ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+WHERE 
+    tc.TABLE_NAME = 'Membro' 
+    AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY';
 
-/* ALTERANDO AS POLÍTICAS DE ATUALIZAÇÃO E REMOÇÃO */
--- Método 01: Remover e Recriar a CONSTRAINT
+
+/* ALTERANDO POLÍTICAS */
+
+# Método 01: Remover e Recriar a CONSTRAINT
 SHOW CREATE TABLE Membro;
 
 ALTER TABLE Membro
@@ -88,8 +114,8 @@ REFERENCES Departamento (cod_depto)
 ON DELETE RESTRICT 
 ON UPDATE CASCADE;
 
--- Método 2: Utilizando Temporariamente uma Tabela de Backup
-# RECOMENDADO
+# Método 2: Utilizando Temporariamente uma Tabela de Backup 
+# (RECOMENDADO)
 SHOW CREATE TABLE Membro;
 
 CREATE TABLE membro_backup LIKE Membro;
@@ -105,6 +131,6 @@ REFERENCES Departamento (cod_depto)
 ON DELETE RESTRICT 
 ON UPDATE CASCADE;
 
-INSERT INTO Membro SELECT * FROM orders_backup;
+INSERT INTO Membro SELECT * FROM membro_backup;
 
-DROP TABLE orders_backup;
+DROP TABLE membro_backup;
